@@ -22,7 +22,8 @@ async function placeOrder(volumePTAUSDT, volumePTABTC, paused) {
         let price = await  network.executeBookOrder("PTA/USDT", 1, 1);
         console.log("\n" + price +"\n");
         let len = price.length - 2;
-        price = parseFloat(price) - (2 / Math.pow(10, (len)));
+        let ranNumber = Math.floor((Math.random()*9)+1);
+        price = parseFloat(price) - (ranNumber / Math.pow(10, (len)));
         price = price.toFixed(len);
         let side = 1;
         let market = constant.Market_PTAUSDT;
