@@ -46,8 +46,6 @@ async function executeOrder(signedMessage, volume, price, market, side){
     try {
         let resp = await fetch(url, {method: 'POST', body: body});
         let data = await resp.json();
-        console.log(data);
-        //["api_key", "sign", "market", "side" , "amount" , "price", "isfee"]
         return data;
     } catch(err) {
         console.error("Error message" + err);
@@ -62,7 +60,6 @@ async function executeBookOrder(market, side, total){
         let body = `market=${market}&side=${side}&offset=0&limit=${total}`;
         let resp = await fetch(url, {method: 'POST', body: body});
         let data = await resp.json();
-        console.log(data.result.orders);
         return data.result.orders[0].price;
     } catch(err) {
         console.error("Error message" + err);

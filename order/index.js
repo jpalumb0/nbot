@@ -18,11 +18,10 @@ function signMessage(volume, price, market, side){
 
 async function placeOrder(volumePTAUSDT, volumePTABTC, paused) {
     try {
-        //let price = await network.getLatestPrice_PTA_USDT();
+        //USDT pair
         let price = await  network.executeBookOrder("PTA/USDT", 1, 1);
-        console.log("\n" + price +"\n");
         let len = price.length - 2;
-        let ranNumber = Math.floor((Math.random()*9)+1);
+        let ranNumber = Math.floor((Math.random()*7)+1);
         price = parseFloat(price) - (ranNumber / Math.pow(10, (len)));
         price = price.toFixed(len);
         let side = 1;
@@ -30,37 +29,35 @@ async function placeOrder(volumePTAUSDT, volumePTABTC, paused) {
         let signedMessag = signMessage(volumePTAUSDT, price, market, side);
 
         let order = await network.executeOrder(signedMessag, volumePTAUSDT, price, market, side);
-        //console.log(order);
        
         await sleep(paused/10);
         
 
-        //price = 0.006400;
-        //price = await network.getLatestPrice_PTA_USDT();
         side = 2;
-        //volume = 10;
         signedMessag = signMessage(volumePTAUSDT, price, market, side);
         order = await network.executeOrder(signedMessag, volumePTAUSDT, price, market, side);
         await sleep(paused/2);
 
         //The below is for BTC
-        /*
-        price = await network.getLatestPrice_PTA_BTC();
+        
+        price = await network.executeBookOrder("PTA/BTC", 1, 1);
+        len = price.length - 2;
+        ranNumber = Math.floor((Math.random()*9)+1);
+        price = parseFloat(price) - (ranNumber / Math.pow(10, (len)));
+        price = price.toFixed(len);
         side = 1;
         market = constant.Market_PTABTC;
-        rslt = signMessage(volumePTABTC, price, market, side);
-        order = await network.executeOrder(rslt, volumePTABTC, price, market, side);
-        //console.log(order);
-        await sleep(6000);
-        //price = 0.006400;
-        price = await network.getLatestPrice_PTA_BTC();
+        signedMessag = signMessage(volumePTABTC, price, market, side);
+        order = await network.executeOrder(signedMessag, volumePTABTC, price, market, side);
+        console.log(order);
+        await sleep(paused/10);
+
+
         side = 2;
-        //volume = 10;
-        rslt = signMessage(volumePTABTC, price, market, side);
-        console.log(rslt);
-        console.log("Price: "+ price);
-        order = await network.executeOrder(rslt, volumePTABTC, price, market, side);
-    */
+        signedMessag = signMessage(volumePTABTC, price, market, side);
+        order = await network.executeOrder(signedMessag, volumePTABTC, price, market, side);
+        console.log(order);
+
     } catch(err) {
         console.error("Error message" + err);
 
@@ -70,7 +67,6 @@ async function placeOrder(volumePTAUSDT, volumePTABTC, paused) {
 async function orderLoop(pause, dailyVolume){
     let volumePerHour = (dailyVolume*3) / 6;
     const StandardDeviation = 700;
-
 
     while(true) {
         let arrayUSDTVariables = lognormal.lognormal(volumePerHour, StandardDeviation);
