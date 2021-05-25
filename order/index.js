@@ -49,14 +49,12 @@ async function placeOrder(volumePTAUSDT, volumePTABTC, paused) {
         market = constant.Market_PTABTC;
         signedMessag = signMessage(volumePTABTC, price, market, side);
         order = await network.executeOrder(signedMessag, volumePTABTC, price, market, side);
-        console.log(order);
         await sleep(paused/10);
 
 
         side = 2;
         signedMessag = signMessage(volumePTABTC, price, market, side);
         order = await network.executeOrder(signedMessag, volumePTABTC, price, market, side);
-        console.log(order);
 
     } catch(err) {
         console.error("Error message" + err);
@@ -80,7 +78,6 @@ async function orderLoop(pause, dailyVolume){
             } catch(err) {
                 console.error(err);
             }
-
         }
         await sleep(pause/2);
     }
