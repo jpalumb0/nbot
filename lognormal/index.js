@@ -10,6 +10,7 @@ function getRandomArbitrary(n1, n2) {
     }
     return Math.random() * (max - min) + min;
 }
+
   
 function lognormal(m, v) {
     let arr = [];

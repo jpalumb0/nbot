@@ -7,7 +7,7 @@ const constant = require("../constant/index.js");
 const secret = require("../constant/secrets.js");
 
 //populate secret with keys
-
+//
 async function getLatestPrice_PTA_BTC() {
     //curl --data "market=PTA/BTC" "https://api.hotbit.io/v2/p1/market.last"
     try {
@@ -26,6 +26,7 @@ async function getLatestPrice_PTA_BTC() {
 
 }
 
+// gets LAST price
 async function getLatestPrice_PTA_USDT() {
     //curl --data "market=PTA/USDT" "https://api.hotbit.io/v2/p1/market.last"
     try {
@@ -43,6 +44,7 @@ async function getLatestPrice_PTA_USDT() {
     }
 }
 
+//enters limit order
 async function executeOrder(signedMessage, volume, price, market, side){
     let url = constant.BaseUrl_P2 + "order.put_limit"; 
     let body = `amount=${volume}&api_key=${secret.API_Key}&isfee=0&market=${market}&price=${price}&sign=${signedMessage}&side=${side}`;
@@ -57,6 +59,7 @@ async function executeOrder(signedMessage, volume, price, market, side){
     }
 }
 
+// gets low ask/high bid
 async function executeBookOrder(market, side, total){
     //curl --data  "market=PTA/USDT&side=1&offset=0&limit=1" "https://api.hotbit.io/v2/p1/order.book"
     let url = constant.BaseUrl_P1 + "order.book"; 
@@ -66,7 +69,7 @@ async function executeBookOrder(market, side, total){
         //let resp = await fetch(url, {method: 'POST', body: body});
         //console.log(resp.body)
         //let data = await resp.json();
-        let data = JSON.parse(resp.stdout)
+        let data = JSON.parse(resp.stdout);
 
         return data.result.orders[0].price;
     } catch(err) {
@@ -74,10 +77,42 @@ async function executeBookOrder(market, side, total){
     }
 }
 
+//cancels unfilled orders
+async function cancelOrder(signedMessage, market, order_id){
+    let url = constant.BaseUrl_P2 + "order.cancel"; 
+    let body = `api_key=${secret.API_Key}&sign=${signedMessage}&market=${market}&order_id=${order_id}`;
+    try {
+        //let resp = await fetch(url, {method: 'POST', body: body});
+        let resp = await execFile('curl', ['--data', body, url]);
+        //let data = await resp.json();
+        let data = JSON.parse(resp.stdout);
+        return data;
+    } catch(err) {
+        console.error("Error message" + err);
+    }
+}
+
+//returns finished orders and checks for filled price
+async function getFill(signedMessage, order_id){
+    let url = constant.BaseUrl_P2 + "order.finished_detail"; 
+    let body = `api_key=${secret.API_Key}&sign=${signedMessage}&offset=0&order_id=${order_id}`;
+    try {
+        //let resp = await fetch(url, {method: 'POST', body: body});
+        let resp = await execFile('curl', ['--data', body, url]);
+        //let data = await resp.json();
+        let data = JSON.parse(resp.stdout);
+        return data;
+    } catch(err) {
+        console.error("Error message" + err);
+    }
+}
+
 
 module.exports = {
     executeOrder: executeOrder,
     executeBookOrder: executeBookOrder,
+    cancelOrder: cancelOrder,
+    getFill: getFill,
     getLatestPrice_PTA_USDT: getLatestPrice_PTA_USDT,
     getLatestPrice_PTA_BTC: getLatestPrice_PTA_BTC
 
