@@ -71,7 +71,7 @@ async function placeOrder(volume, paused, price, market) {
         let order = await network.executeOrder(signedMessag, volume, price, market, side);
         //console.log(order.result);
         sellId = order.result.id;
-        //console.log(sellId);
+        console.log(sellId);
        
         await sleep(paused/10);
         
@@ -81,7 +81,7 @@ async function placeOrder(volume, paused, price, market) {
         //enter buy order
         order = await network.executeOrder(signedMessag, volume, price, market, side);
         buyId = order.result.id;
-        //console.log(buyId);
+        console.log(buyId);
         await sleep(paused/2);
 
         //The below is for BTC
@@ -121,12 +121,12 @@ async function cancelAllOrders(orders, market){
         for(let i = 0; i<orders.length; i++){
             
             let order_id = orders[i];
-            //console.log(order_id);
+            console.log(order_id);
             //console.log(market);
-            let signedMessage = signMessageCancel(market, order_id)
+            let signedMessage = signMessageCancel(market, order_id);
             
             let cancel = await network.cancelOrder(signedMessage, market, order_id);
-            //console.log(cancel);
+            console.log(cancel);
             
         }
 
@@ -135,7 +135,53 @@ async function cancelAllOrders(orders, market){
     }
 }
 
-async function orderLoop(pause, dailyVolume, market){
+async function priceProbe(pause, price, market){
+    try{
+        let buyProbe = await placeOrder(Math.floor(Math.random()*9+1), pause/6, price, market);
+        console.log(buyProbe);
+        let buyOrderId = buyProbe[1];
+        //console.log(buyOrderId + "_" + typeof buyOrderId);
+        //let signedMessage = signMessageFill(buyOrderId);
+        //console.log(signedMessage);
+        //await sleep(pause/2);
+        // The 'fill' block would work if getFill actually returned fill price, but it does not as of 6.22.21
+        // let fill = await network.getFill(signedMessage, buyOrderId);
+        // let fillPrice = fill.result.records[0].price
+        // console.log("Fill: ");
+        // console.log(fill.result.records[0])
+        // console.log(fillPrice);
+        // if (parseFloat(fillPrice) < price){
+        //     let price = await setOrderPrice(fillPrice, market);
+        //     console.log("Price change");
+        // }
+        // console.log("big price: " + price);
+        // The 'last' block pulls last price to get the actual price of the fill.  This will not hold up once there are lots of orders flying around
+        let last = await network.getLatestPriceStatus(2,market);
+        console.log("last" + last);
+        //console.log(last.result);
+        //let lastPrice = last.result[0].last;
+        //console.log(lastPrice);
+        if (parseFloat(last) < price){
+            let probeprice = await setOrderPrice(last, market);
+            price = probeprice;
+            console.log("Price change");
+            try {
+                let p_cancelled = await cancelAllOrders(buyProbe, market);
+                //console.log(cancelled);
+            } catch(err){
+                console.error(err);
+                //console.log("error in cancel, could be that cancel without orders to cancel throws errors")
+            }
+
+        }
+    }   catch(err) {
+            console.error("Error message" + err);
+    }  
+    console.log("probe price: " + price);
+    return price;
+}
+
+async function orderLoop(pause, dailyVolume, market, probe){ //probe is binary whether or not to bother probing
     let volumePerHour = dailyVolume/24;
     let StandardDeviation = 0.2*volumePerHour;
 
@@ -150,31 +196,26 @@ async function orderLoop(pause, dailyVolume, market){
                 
                 //console.log(priceLen);
                 let refPrice = await  network.executeBookOrder(market, 1, 1);
-                //console.log("Ref price: " + refPrice);
+                console.log("Ref price: " + refPrice);
                 
                 let price = await setOrderPrice(refPrice, market);
-                //console.log("order price: " + price);
+                console.log("order price: " + price);
                 //console.log(price);
-                let buyProbe = await placeOrder(1, pause/6, price, market);
-                let buyOrderId = buyProbe[1];
-                //console.log(buyOrderId + "_" + typeof buyOrderId);
-                let signedMessage = signMessageFill(buyOrderId);
-                //console.log(signedMessage);
-                await sleep(pause/2);
-                let fill = await network.getFill(signedMessage, buyOrderId);
-                //console.log(fill);
-                if (fill.result.price < price){
-                    price = await setOrderPrice(fill.result.price);
+                if (probe == 1){
+                    let pp = await priceProbe(pause, price, market);
+                    price = pp;
                 }
-
+                console.log("bigPrice= " + price);
                 let buyExecuted = await placeOrder(Math.ceil(sellVolume), pause, price, market);
-                console.log(buyExecuted);
+                //console.log("buyExecuted: ");
+                //console.log(buyExecuted);
                 await sleep(pause/10);
                 try {
-                    let cancelled = await cancelAllOrders(buyExecuted);
+                    let cancelled = await cancelAllOrders(buyExecuted, market);
                     //console.log(cancelled);
                 } catch(err){
                     console.error(err);
+                    //console.log("error in cancel, could be that cancel without orders to cancel throws errors")
                 }
             } catch(err) {
                 console.error(err);
