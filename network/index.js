@@ -8,15 +8,39 @@ const secret = require("../constant/secrets.js");
 
 //populate secret with keys
 //
-async function getLatestPrice_PTA_BTC() {
+async function getLatestPrice(market) {
     //curl --data "market=PTA/BTC" "https://api.hotbit.io/v2/p1/market.last"
     try {
-        let resp = await execFile('curl', ['--data', 'market=PTA/BTC', constant.BaseUrl_P1 + "market.last"]);
+        let resp = await execFile('curl', ['--data', 'market=' + market, constant.BaseUrl_P1 + "market.last"]);
+        console.log(resp);
         //let resp = await fetch(constant.BaseUrl_P1 + "market.last", {method: 'POST', body: 'market=PTA/BTC'});
         //let data = await resp.json();
         let data = JSON.parse(resp.stdout);
         if(!data.err) {    
             return parseFloat(data.result);
+        }
+        return null; 
+
+    } catch(err) {
+        console.error("Error message" + err);
+    }
+
+}
+
+async function getLatestPriceStatus(period=2,market) {
+    //curl --data "market=PTA/BTC" "https://api.hotbit.io/v2/p1/market.last"
+    let url = constant.BaseUrl_P1 + "market.status"; 
+    let body = `&market=${market}&period=${period}`;
+    
+
+    try {
+        let resp = await execFile('curl', ['--data', body, url]);
+        console.log(resp);
+        //let resp = await fetch(constant.BaseUrl_P1 + "market.last", {method: 'POST', body: 'market=PTA/BTC'});
+        //let data = await resp.json();
+        let data = JSON.parse(resp.stdout);
+        if(!data.err) {    
+            return parseFloat(data.result.last);
         }
         return null; 
 
@@ -104,6 +128,7 @@ async function getFill(signedMessage, order_id){
         return data;
     } catch(err) {
         console.error("Error message" + err);
+        console.log("getFill Error time")
     }
 }
 
@@ -113,7 +138,8 @@ module.exports = {
     executeBookOrder: executeBookOrder,
     cancelOrder: cancelOrder,
     getFill: getFill,
-    getLatestPrice_PTA_USDT: getLatestPrice_PTA_USDT,
-    getLatestPrice_PTA_BTC: getLatestPrice_PTA_BTC
+    getLatestPrice: getLatestPrice,
+    getLatestPriceStatus: getLatestPriceStatus
+    //getLatestPrice_PTA_BTC: getLatestPrice_PTA_BTC
 
 }
